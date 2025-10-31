@@ -26,6 +26,7 @@ class Conta {
     private String número;
     private String titular;
     private double saldo;
+    private double limiteDiário;
 
     public Conta(String número, String titular, double saldoInicial) throws ValorInválidoException {
         if (saldoInicial < 0) {
@@ -35,6 +36,7 @@ class Conta {
         this.número = número;
         this.titular = titular;
         this.saldo = saldoInicial;
+        this.limiteDiário = 500;
     }
 
     public String getNúmero() {
@@ -48,12 +50,17 @@ class Conta {
         this.saldo += valor;
     }
 
-    public void sacar(double valor) throws SaldoInsuficiênteExpection {
+    public void sacar(double valor) throws SaldoInsuficiênteExpection, OperaçãoNãoPermitidaException {
         if (valor > this.saldo) {
             throw new SaldoInsuficiênteExpection("Saldo insuficiênte!");
         }
 
+        if (valor > this.limiteDiário) {
+            throw new OperaçãoNãoPermitidaException("Limite diário excedido!");
+        }
+
         this.saldo -= valor;
+        this.limiteDiário -= valor;
     }
 
     public void transferir(Conta destino, double valor) {
@@ -65,13 +72,15 @@ class Conta {
         }
     }
 
-    public String extratoSimples() {
+    public String informações() {
         return (
             "Titular: " + titular + "\n" +
             "Número: " + número + "\n" +
             "Saldo: " + saldo
         );
     }
+
+    //public String extratoSimples() {}
 }
 
 class Banco {
@@ -119,9 +128,9 @@ class Banco {
 
     }
 
-    public void extrato() {
+    public void informarContas() {
         for (int i = 0; i < contas.size(); ++i) {
-            System.out.println(contas.get(i).extratoSimples());
+            System.out.println(contas.get(i).informações());
         }
     }
 }
@@ -136,6 +145,6 @@ class Main {
 
         banco.transferirEntre("1", "2", 100);
 
-        banco.extrato();
+        banco.informarContas();
     }
 }
