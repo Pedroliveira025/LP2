@@ -1,14 +1,37 @@
 import java.util.ArrayList;
 
+// para valores menores ou iguais a zero
+class ValorInválidoException extends Exception {
+    public ValorInválidoException(String mensagem) {
+        super(mensagem);
+    }
+}
+
+// para saques ou transferências acima do saldo
+class SaldoInsuficiênteExpection extends Exception {
+    public SaldoInsuficiênteExpection(String mensagem) {
+        super(mensagem);
+    }
+}
+
+// para operações inválidas (como transferir para a mesma conta)
+class OperaçãoNãoPermitidaException extends Exception {
+    public OperaçãoNãoPermitidaException(String mensagem) {
+        super(mensagem);
+    }
+}
+
 class Conta {
 
     private String número;
     private String titular;
     private double saldo;
 
-    public Conta(String número, String titular, double saldoInicial) {
-        // número de conta negativo
-        // saldo incial negativo
+    public Conta(String número, String titular, double saldoInicial) throws ValorInválidoException {
+        if (saldoInicial < 0) {
+            throw new ValorInválidoException("Saldo inicial não pode ser negativo!");
+        }
+
         this.número = número;
         this.titular = titular;
         this.saldo = saldoInicial;
@@ -18,30 +41,35 @@ class Conta {
         return this.número;
     }
 
-    public void depositar(double valor) {
+    public void depositar(double valor) throws ValorInválidoException {
+        if (valor <= 0) {
+            throw new ValorInválidoException("Valor de deposito deve ser maior que zero!");
+        }
         this.saldo += valor;
     }
 
-    public void sacar(double valor) {
+    public void sacar(double valor) throws SaldoInsuficiênteExpection {
+        if (valor > this.saldo) {
+            throw new SaldoInsuficiênteExpection("Saldo insuficiênte!");
+        }
+
         this.saldo -= valor;
     }
 
     public void transferir(Conta destino, double valor) {
-        this.sacar(valor);
-        destino.depositar(valor);
+        try {
+            this.sacar(valor);
+            destino.depositar(valor);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public String extratoSimples() {
         return (
-            "Titular: " +
-            titular +
-            "\n" +
-            "Número: " +
-            número +
-            "\n" +
-            "Saldo: " +
-            saldo +
-            "\n"
+            "Titular: " + titular + "\n" +
+            "Número: " + número + "\n" +
+            "Saldo: " + saldo
         );
     }
 }
@@ -55,27 +83,40 @@ class Banco {
     }
 
     public void abrirConta(String número, String titular, double saldoInicial) {
-        contas.add(new Conta(número, titular, saldoInicial));
+        try {
+            contas.add(new Conta(número, titular, saldoInicial));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
-    public Conta buscar(String número) {
+    public Conta buscar(String número) throws OperaçãoNãoPermitidaException {
+        Conta conta = null;
+
         for (int i = 0; i < contas.size(); ++i) {
             if (número.equals(contas.get(i).getNúmero())) {
-                return contas.get(i);
+                conta = contas.get(i);
             }
         }
-        return null;
+
+        if (conta == null) {
+            throw new OperaçãoNãoPermitidaException("Conta inexistênte!");
+        }
+
+        return conta;
     }
 
-    public void transferirEntre(
-        String numOrigem,
-        String numDestino,
-        double valor
-    ) {
-        Conta origem = buscar(numOrigem);
-        Conta destino = buscar(numDestino);
+    public void transferirEntre(String numOrigem, String numDestino, double valor) {
 
-        origem.transferir(destino, valor);
+        try {
+            Conta origem = buscar(numOrigem);
+            Conta destino = buscar(numDestino);
+            origem.transferir(destino, valor);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void extrato() {
